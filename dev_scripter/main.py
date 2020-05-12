@@ -6,12 +6,14 @@ import requests
 from settings_global import URL_ENDPOINT_SENDER
 from collections import Counter
 import hashlib
+from httprequests import PayLoad
+import sys
 
 dont_settr = 'DONT SETTER'
 
 if URL_ENDPOINT_SENDER == dont_settr:
     print('URL ENDPOINT POST DONT SETTER')
-    exit
+    exit()
 
 
 t1 = time.time()
@@ -21,6 +23,8 @@ reader = get_instance()
 woorkbooks = reader.create_woorkbooks()
 
 _list_tables_anvisa = reader.gerenate_data_anvisa(woorkbooks)
+cp = _list_tables_anvisa.copy()
+
 _list_tables_antibiotics = reader.generate_data_anvisa_ant(woorkbooks)
 
 global md5
@@ -164,7 +168,7 @@ def eligbles(_list_tables_anvisa,_list_tables_antibiotics):
 
 dict_eligbles = eligbles(_list_tables_anvisa,_list_tables_antibiotics)
 temp = time.time() - t1
-print("Calculando Elegiveis -> Duração: {time}  Segundos ".format(time=temp))
+print("Calculando Elegiveis -> Duração: %2.f segundos "%(temp))
 print("Aplicando Filtragem dos dados...")
 print()
 
@@ -293,19 +297,37 @@ def distinct_drugs(eligbles):
     keys_distinct = new_resolv(list_ant,True)
     return retire_only_one(keys_distinct,p)
 
-def sender_eligibles_endpoint(medicamentos,antibioticos):
+def sender_eligibles_endpoint(medicamentos,antibioticos,token):
     # sender elegiveis para endpoint ;
-    print(medicamentos[0][1].ean1)
-    print(antibioticos[0][1].ean1)
+    t = token[0]
+    if t == "":
+        exit()
+    else:
+        payloader = PayLoad(t,URL_ENDPOINT_SENDER)
+        headers = payloader.create_payload()
+        payloader.sender_payload_antibiotic(antibioticos,headers)
 
-
-
+    pass
 
 
 antibioticos = distinct_antibiotcs(dict_eligbles)
 medicamentos = distinct_drugs(dict_eligbles)
 
+quantidade_dados_anvisa = len(cp)
+quantidade_dados_medicamentos = len(medicamentos)
+quantidade_dados_antibioticos_filtrados = len(antibioticos)
+tot_alg = quantidade_dados_medicamentos + quantidade_dados_antibioticos_filtrados
+diferenca_acu = tot_alg - quantidade_dados_anvisa
+porcentagem = diferenca_acu / 100
+acerto = 100 - porcentagem
+print("Taxa de eficiência da importação e filtragem dos {dados}  dados é igual = {acerto}  % ".format(dados=quantidade_dados_anvisa,acerto=acerto))
+print()
 print("Filtragem e Validação Finalizada: Enviando elegiveis para o endpoint.")
 print()
 
-sender_eligibles_endpoint(medicamentos,antibioticos)
+token = []
+for i in sys.argv[1:]:
+    token.append(i)
+
+
+sender_eligibles_endpoint(medicamentos,antibioticos,token)
