@@ -33,10 +33,10 @@ class ReaderXLS(object):
         apresentacao = anvisa_med.sheet_by_index(0).col(6)
         classe = anvisa_med.sheet_by_index(0).col(7)
         tipo = anvisa_med.sheet_by_index(0).col(8)
-        registricao=anvisa_med.sheet_by_index(0).col(9)
-        tarja = anvisa_med.sheet_by_index(0).col(10)
-        substancia = anvisa_med.sheet_by_index(0).col(11)
-        pmc_20 = anvisa_med.sheet_by_index(0).col(12)
+        registricao=anvisa_med.sheet_by_index(0).col(10)
+        tarja = anvisa_med.sheet_by_index(0).col(11)
+        substancia = anvisa_med.sheet_by_index(0).col(0)
+        pmc_20 = anvisa_med.sheet_by_index(0).col(9)
 
         for i in range(len(principio_ativo)):
             anv_list.append([

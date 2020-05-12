@@ -37,18 +37,18 @@ def construct_drug(K,antibiotico):
     if antibiotico:
         ean1 = parseCellString(K,3)
         ean2 = parseCellString(K,4)
-        restriction = parseCellString(K,9)
+        restriction = parseCellString(K,10)
         product_name = parseCellString(K,5)
         apresentation = parseCellString(K,6)
         classe = parseCellString(K,7)
         type_product = parseCellString(K,8)
-        tarja = parseCellString(K,10)
+        tarja = parseCellString(K,11)
         register = parseCellString(K,2)
-        substance_pharm = parseCellString(K,11)
+        substance_pharm = parseCellString(K,0)
         can_sell = False
-        pmc_20 = str(K[12]).split(":")[0]
+        pmc_20 = str(K[9]).split(":")[0]
         if pmc_20 == "number":
-            pmc_20 = str(K[12]).split(":")[1]
+            pmc_20 = str(K[9]).split(":")[1]
         else:
             pmc_20 = 0.0
         
@@ -56,21 +56,21 @@ def construct_drug(K,antibiotico):
     else:
         ean1 = parseCellString(K,3)
         ean2 = parseCellString(K,4)
-        restriction = parseCellString(K,9)
+        restriction = parseCellString(K,10)
         product_name = parseCellString(K,5)
         apresentation = parseCellString(K,6)
         classe = parseCellString(K,7)
         type_product =parseCellString(K,8)
-        tarja = parseCellString(K,10)
-        if tarja == 'Venda Livre':
+        tarja = parseCellString(K,11)
+        if tarja == 'Tarja Venda Livre/Sem Tarja (*)':
             can_sell = True
         else:
             can_sell = False
         register = parseCellString(K,2)
-        substance_pharm = parseCellString(K,11)
-        pmc_20 = str(K[12]).split(":")[0]
+        substance_pharm = parseCellString(K,0)
+        pmc_20 = str(K[9]).split(":")[0]
         if pmc_20 == "number":
-            pmc_20 = str(K[12]).split(":")[1]
+            pmc_20 = str(K[9]).split(":")[1]
         else:
             pmc_20 = 0.0
         
@@ -78,9 +78,9 @@ def construct_drug(K,antibiotico):
 def construct_product(K):
     laboratorio = parseCellString(K,1)
     product_name = parseCellString(K,5)
-    pmc_20 = str(K[12]).split(":")[0]
+    pmc_20 = str(K[9]).split(":")[0]
     if pmc_20 == "number":
-        pmc_20 = str(K[12]).split(":")[1]
+        pmc_20 = str(K[9]).split(":")[1]
     else:
         pmc_20 = 0.0
 
@@ -99,11 +99,12 @@ def construct_product(K):
 
 
 def search_linear_and_remove(A,_list_tables_antibiotics):
+    A.remove(A[0])
     for i in _list_tables_antibiotics[1:]:
         cell_str = str(i)
         s = cell_str.split(":")
         string_c = s[1].replace("'","")
-        for k in A[1:]:
+        for k in A:
             cell_str_0 = str(k[0])
             spliter_cel_0 = cell_str_0.split(":")
             string_cel_0 = spliter_cel_0[1].replace("'","")
@@ -114,6 +115,7 @@ def search_linear_and_remove(A,_list_tables_antibiotics):
 
             if string_cel_0.find(string_c) !=-1 or string_cel_1.find(string_c) != -1:
                 A.remove(k)
+   
     return A
                 
 
@@ -163,6 +165,9 @@ def eligbles(_list_tables_anvisa,_list_tables_antibiotics):
 dict_eligbles = eligbles(_list_tables_anvisa,_list_tables_antibiotics)
 temp = time.time() - t1
 print("Calculando Elegiveis -> Duração: {time}  Segundos ".format(time=temp))
+print("Aplicando Filtragem dos dados...")
+print()
+
 
 global aux_p
 aux_p = []
@@ -181,6 +186,13 @@ def search_drug(item,key,repetidos):
             aux_d.append(i)
             return key
             break
+
+def transform(seta):
+    dict_d = {}
+    for i in seta:
+        for k in  i.keys():
+            dict_d.update({k: i.get(k)})
+    return dict_d
 
 def new_resolv(seta,drug):
     if drug:
@@ -231,6 +243,8 @@ def new_resolv(seta,drug):
                 result_keys.append(i)
 
         return remove(result_keys)
+
+
 def remove(lista):
     aux = []
     for i in lista:
@@ -240,6 +254,21 @@ def remove(lista):
     aux.sort()
     return aux
 
+
+
+
+def retire_only_one(key_set,p):
+    q = False
+    for k in key_set:
+        for n in p:
+            if k == n[0]:
+                if p.count(k) == 2:
+                    p.remove(k)
+                
+    
+    return p
+
+
 def distinct_antibiotcs(eligbles):
     p = eligbles.get("antibioticos")
     list_ant = []
@@ -247,44 +276,36 @@ def distinct_antibiotcs(eligbles):
     for i in p:
         list_ant.append({i[0]: i[1].ean1})
         d.update({i[0]: i[1].ean1})
-    
 
     keys_distinct = new_resolv(list_ant,False)
+    return retire_only_one(keys_distinct,p)
 
-    for k in keys_distinct:
-        for n in p:
-            if k == n[0]:
-                p.remove(n)
-                
-    return p
-
-
+        
 def distinct_drugs(eligbles):
     p = eligbles.get("medicamentos")
     list_ant = []
     d = {}
+
     for i in p:
         list_ant.append({i[0]: i[1].ean1})
         d.update({i[0]: i[1].ean1})
-    
 
     keys_distinct = new_resolv(list_ant,True)
-
-    for k in keys_distinct:
-        for n in p:
-            if k == n[0]:
-                p.remove(n)
-                
-    return p
+    return retire_only_one(keys_distinct,p)
 
 def sender_eligibles_endpoint(medicamentos,antibioticos):
     # sender elegiveis para endpoint ;
-    pass
+    print(medicamentos[0][1].ean1)
+    print(antibioticos[0][1].ean1)
+
+
 
 
 
 antibioticos = distinct_antibiotcs(dict_eligbles)
 medicamentos = distinct_drugs(dict_eligbles)
 
+print("Filtragem e Validação Finalizada: Enviando elegiveis para o endpoint.")
+print()
 
 sender_eligibles_endpoint(medicamentos,antibioticos)
