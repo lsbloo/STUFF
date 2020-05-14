@@ -1,9 +1,11 @@
 import requests
 import os
 import json
+import time
 
+SLEEP_TIME=0.2
 class PayLoad(object):
-    SLEEP_TIME=0.5
+    SLEEP_TIME=0.2
     def __init__(self,token,endpoint):
         try:
             if token == "" or endpoint == "":
@@ -49,18 +51,23 @@ class PayLoad(object):
         url  = self.endpoint
         header = headers
         cont = 0
+        payload_fails = []
         for i in antibioticos:
             med = i[1]
             prod = i[2]
+            if med.ean2 == "    -     ":
+                med.ean2 = 0
+            if med.ean1 == "    -     ":
+                med.ean1 = 0
+            
             payload = {
-                "ean1": med.ean1,
-                "icon": "",
+                "ean1": int(med.ean1),
                 "is_antibiotic": med.is_antibiotic,
                 "category": 'Genéricos',
                 "name":med.product_name,
                 "brand":prod.brand,
                 "description":prod.description,
-                "is_drug":med.is_drug,
+                "is_drug":prod.is_drug,
                 "active_principle":prod.active_principle,
                 "federal_code": med.register,
                 "display":med.apresentation,
@@ -69,19 +76,68 @@ class PayLoad(object):
                 "band_color": med.tarja,
                 "can_sell":med.can_sell,
                 "pmc_20":med.pmc,
-                "barcode2":med.ean2
+                "ean2": int(med.ean2),
+                "apresentation": med.apresentation
             }
             r = requests.post(url,data=json.dumps(payload), headers=header)
             time.sleep(SLEEP_TIME)
             cont+=1
+            if r != None and r.status_code==202:
+                print("Enviando Antibiotico:  {cont}  de  {q}".format(cont=cont,q=len(antibioticos)))
+            else:
+                payload_fails.append(i)
 
-        print("Enviando  {cont}  de  {q}".format(cont=cont,q=len(antibioticos)))
 
         if cont == len(antibioticos):
             print('Antibioticos Enviados. ')
-            return True
+            return {"status_sender": True,
+            "payload_fail" : payload_fails}
         
+        
+    def sender_payload_meddicament(self,medicamentos,headers):
+        url  = self.endpoint
+        header = headers
+        cont = 0
+        payload_fails=[]
+        for i in medicamentos:
+            med = i[1]
+            prod = i[2]
+            if med.ean2 == "    -     ":
+                med.ean2 = 0
+            if med.ean1 == "    -     ":
+                med.ean1 = 0
+            
+            payload = {
+                "ean1": int(med.ean1),
+                "is_antibiotic": med.is_antibiotic,
+                "category": 'Genéricos',
+                "name":med.product_name,
+                "brand":prod.brand,
+                "description":prod.description,
+                "is_drug":prod.is_drug,
+                "active_principle":prod.active_principle,
+                "federal_code": med.register,
+                "display":med.apresentation,
+                "atc":med.classe,
+                "status_type":med.type_product,
+                "band_color": med.tarja,
+                "can_sell":med.can_sell,
+                "pmc_20":med.pmc,
+                "ean2": int(med.ean2),
+                "apresentation": med.apresentation
+            }
+            r = requests.post(url,data=json.dumps(payload), headers=header)
+            time.sleep(SLEEP_TIME)
+            cont+=1
+            if r != None and r.status_code==202:
+                print("Enviando Medicamento:  {cont}  de  {q}".format(cont=cont,q=len(medicamentos)))
+            else:
+                payload_fails.append(i)
 
+        if cont == len(medicamentos):
+            print('Medicamentos Enviados. ')
+            return {"status_sender": True,
+            "payload_fail" : payload_fails}
 
 
 

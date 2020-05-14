@@ -9,6 +9,15 @@ import hashlib
 from httprequests import PayLoad
 import sys
 
+if __name__ == '__main__':
+    print("FARMA JÁ")
+    print()
+    print('SETTER VARIABLES - CARREGUE AS VARIAVEIS DE AMBIENTE')
+    print()
+    print('Example Usage: python3 main.py <token_acess_endpoint>')
+    print()
+
+
 dont_settr = 'DONT SETTER'
 
 if URL_ENDPOINT_SENDER == dont_settr:
@@ -41,18 +50,18 @@ def construct_drug(K,antibiotico):
     if antibiotico:
         ean1 = parseCellString(K,3)
         ean2 = parseCellString(K,4)
-        restriction = parseCellString(K,10)
+        restriction = parseCellString(K,9)
         product_name = parseCellString(K,5)
         apresentation = parseCellString(K,6)
         classe = parseCellString(K,7)
         type_product = parseCellString(K,8)
-        tarja = parseCellString(K,11)
+        tarja = parseCellString(K,10)
         register = parseCellString(K,2)
         substance_pharm = parseCellString(K,0)
         can_sell = False
-        pmc_20 = str(K[9]).split(":")[0]
-        if pmc_20 == "number":
-            pmc_20 = str(K[9]).split(":")[1]
+        pmc_20 = str(K[12]).split(":")[0]
+        if pmc_20 == "text":
+            pmc_20 = str(K[12]).split(":")[1]
         else:
             pmc_20 = 0.0
         
@@ -60,21 +69,21 @@ def construct_drug(K,antibiotico):
     else:
         ean1 = parseCellString(K,3)
         ean2 = parseCellString(K,4)
-        restriction = parseCellString(K,10)
+        restriction = parseCellString(K,9)
         product_name = parseCellString(K,5)
         apresentation = parseCellString(K,6)
         classe = parseCellString(K,7)
         type_product =parseCellString(K,8)
-        tarja = parseCellString(K,11)
-        if tarja == 'Tarja Venda Livre/Sem Tarja (*)':
+        tarja = parseCellString(K,10)
+        if tarja == 'Tarja Venda Livre/Sem Tarja (*)' or 'Tarja Venda Livre':
             can_sell = True
         else:
             can_sell = False
         register = parseCellString(K,2)
         substance_pharm = parseCellString(K,0)
-        pmc_20 = str(K[9]).split(":")[0]
-        if pmc_20 == "number":
-            pmc_20 = str(K[9]).split(":")[1]
+        pmc_20 = str(K[12]).split(":")[0]
+        if pmc_20 == "text":
+            pmc_20 = str(K[12]).split(":")[1]
         else:
             pmc_20 = 0.0
         
@@ -82,9 +91,10 @@ def construct_drug(K,antibiotico):
 def construct_product(K):
     laboratorio = parseCellString(K,1)
     product_name = parseCellString(K,5)
-    pmc_20 = str(K[9]).split(":")[0]
-    if pmc_20 == "number":
-        pmc_20 = str(K[9]).split(":")[1]
+    pmc_20 = str(K[12]).split(":")[0]
+    
+    if pmc_20 == "text":
+        pmc_20 = str(K[12]).split(":")[1]
     else:
         pmc_20 = 0.0
 
@@ -93,10 +103,11 @@ def construct_product(K):
 
     apresentation = parseCellString(K,6)
     register = parseCellString(K,2)
-    description = "Apresentação: "
+    description = "Apresentação: \n "
     description += apresentation
-    description += " ;Registro MS: "
+    description += "  \n ;Registro MS: "
     description += register
+
 
 
     return Product(laboratorio,product_name,description,principio_ativo,is_drug)
@@ -305,9 +316,9 @@ def sender_eligibles_endpoint(medicamentos,antibioticos,token):
     else:
         payloader = PayLoad(t,URL_ENDPOINT_SENDER)
         headers = payloader.create_payload()
-        payloader.sender_payload_antibiotic(antibioticos,headers)
-
-    pass
+        f1 = payloader.sender_payload_antibiotic(antibioticos,headers)
+        f2 = payloader.sender_payload_meddicament(medicamentos,headers)
+        return {"f1": f1, "f2": f2}
 
 
 antibioticos = distinct_antibiotcs(dict_eligbles)
@@ -329,5 +340,12 @@ token = []
 for i in sys.argv[1:]:
     token.append(i)
 
-
-sender_eligibles_endpoint(medicamentos,antibioticos,token)
+t2 = time.time()
+d = sender_eligibles_endpoint(medicamentos,antibioticos,token)
+temp2 = time.time() - t2
+minutos = temp2/60
+horas = minutos/60
+print("Tempo de importação: %2.f horas"%(horas))
+print()
+print("Quantidade de antibioticos com falha na importação: " , len(d.get('f1')))
+print("Quantidade de medicamentos com falha na importação: " , len(d.get('f2')))
